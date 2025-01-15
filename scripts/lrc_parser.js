@@ -15,22 +15,36 @@ class LRCParser {
         if (!lineTimestampMatch) return null;
 
         const lineTimestamp = LRCParser.timestampToSeconds(lineTimestampMatch[0]);
-        const words = [];
+        let words = [];
         let remainingLine = line.slice(lineTimestampMatch[0].length).trim();
 
-        // Extract word-level timestamps and words
-        const wordRegex = /<(\d{2}:\d{2}\.\d{2})>([^<]+)/g;
-        let match;
-        
-        while ((match = wordRegex.exec(remainingLine)) !== null) {
-            const wordTimestamp = LRCParser.timestampToSeconds(match[1]);
-            const word = match[2].trim();
+        // Check if this is an instrumental line
+        if (remainingLine.includes('♪') || remainingLine.includes('INSTRUMENTAL')) {
+            // Extract end timestamp if present
+            const endTimestampMatch = remainingLine.match(/\[(\d{2}:\d{2}\.\d{2})\]/);
+            const endTimestamp = endTimestampMatch ? LRCParser.timestampToSeconds(endTimestampMatch[0]) : null;
             
-            if (word) {
-                words.push({
-                    text: word,
-                    timestamp: wordTimestamp
-                });
+            // Create a single "word" for the entire instrumental section
+            words = [{
+                text: remainingLine,
+                timestamp: lineTimestamp,
+                duration: endTimestamp ? endTimestamp - lineTimestamp : null
+            }];
+        } else {
+            // Extract word-level timestamps and words
+            const wordRegex = /<(\d{2}:\d{2}\.\d{2})>([^<]+)/g;
+            let match;
+            
+            while ((match = wordRegex.exec(remainingLine)) !== null) {
+                const wordTimestamp = LRCParser.timestampToSeconds(match[1]);
+                const word = match[2].trim();
+                
+                if (word) {
+                    words.push({
+                        text: word,
+                        timestamp: wordTimestamp
+                    });
+                }
             }
         }
 
@@ -74,13 +88,47 @@ class LRCParser {
                    (!nextWord || nextWord.timestamp > time);
         });
 
-        return currentWordIndex !== -1 ? {
+        if (currentWordIndex === -1) return null;
+
+        const currentWord = currentLine.words[currentWordIndex];
+        let duration;
+
+        // If the word has an explicit duration (instrumental section), use it
+        if (currentWord.duration) {
+            duration = currentWord.duration;
+        } else {
+            // Calculate duration until next word
+            const nextWord = currentLine.words[currentWordIndex + 1];
+            if (nextWord) {
+                duration = Math.max(0.1, nextWord.timestamp - currentWord.timestamp);
+            } else if (currentLineIndex < this.lyrics.length - 1) {
+                // If this is the last word in the line, use time until next line
+                const nextLine = this.lyrics[currentLineIndex + 1];
+                if (nextLine.words.length > 0) {
+                    duration = Math.max(0.1, nextLine.words[0].timestamp - currentWord.timestamp);
+                }
+            }
+        }
+
+        // If no duration could be calculated (last word of last line)
+        // or duration is too short, use a default
+        if (!duration || duration < 0.1) {
+            duration = 0.5;
+            console.log(`Using default duration: ${duration}s`);
+        }
+
+        // Cap maximum duration
+        duration = Math.min(duration, 5);
+
+        return {
             word: {
-                ...currentLine.words[currentWordIndex],
-                index: currentWordIndex
+                ...currentWord,
+                index: currentWordIndex,
+                duration,
+                timestamp: currentWord.timestamp
             },
             lineIndex: currentLineIndex
-        } : null;
+        };
     }
 }
 
