@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karaoke Player</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #lyrics-container {
+            min-height: 200px;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .volume-controls {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        select {
+            padding: 8px;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Karaoke Player</h1>
+    
+    <select id="song-select">
+        <option value="">Select a song...</option>
+    </select>
+
+    <div id="lyrics-container">
+        <!-- Lyrics will be displayed here -->
+        <em>Select a song to begin...</em>
+    </div>
+
+    <div class="controls">
+        <div class="volume-controls">
+            <label for="instrumental-volume">Instrumental:</label>
+            <input type="range" id="instrumental-volume" min="0" max="1" step="0.01" value="1">
+            
+            <label for="lead-vocals-volume">Lead Vocals:</label>
+            <input type="range" id="lead-vocals-volume" min="0" max="1" step="0.01" value="0">
+            
+            <label for="backing-vocals-volume">Backing Vocals:</label>
+            <input type="range" id="backing-vocals-volume" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <div class="playback-controls">
+            <button id="play-btn">Play</button>
+            <button id="pause-btn">Pause</button>
+            <button id="stop-btn">Stop</button>
+        </div>
+    </div>
+
+    <script src="scripts/main.js" type="module"></script>
+</body>
+</html> 
