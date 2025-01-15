@@ -26,6 +26,10 @@ class LyricsDisplay {
     render(parsedLyrics) {
         this.container.innerHTML = '';
         this.lines = [];
+        
+        // Remove any existing transform
+        this.container.style.removeProperty('transform');
+        
         let currentGroup = null;
         let currentGroupElement = null;
 
@@ -106,15 +110,44 @@ class LyricsDisplay {
             this.lines.push(currentGroup[currentGroup.length - 1]);
         });
 
+        // Initialize all lines as visible with default opacity
+        this.lines.forEach((line, idx) => {
+            line.element.style.display = 'block';
+            line.element.style.opacity = 0.6;
+        });
+
+        // Reset container position to top
+        this.container.style.transform = 'translateY(0)';
+
         // Add styles if not already present
         if (!document.getElementById('lyrics-display-styles')) {
             const styles = document.createElement('style');
             styles.id = 'lyrics-display-styles';
             styles.textContent = `
+                .lyrics-window {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-start !important;
+                    overflow-y: hidden;
+                }
+
+                #lyrics-container {
+                    position: relative !important;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-start !important;
+                    width: 100%;
+                    padding-top: 2em;
+                    transform: none;
+                }
+
                 .lyrics-group {
-                    margin: 1em 0;
+                    margin: 0.5em 0;
                     transition: all 0.5s ease;
                     width: 100%;
+                    text-align: center;
                 }
                 .lyrics-line {
                     margin: 0.5em 0;
