@@ -242,6 +242,93 @@
             transform: scale(1.1);
         }
 
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .time-display {
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0;
+            background: var(--primary-color);
+            border-radius: 4px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            pointer-events: none;
+            transition: width 0.1s linear;
+        }
+
+        .progress-slider {
+            -webkit-appearance: none;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+            transform: translateY(-50%);
+        }
+
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+            position: relative;
+            z-index: 3;
+        }
+
+        .progress-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* Add visible thumb element that follows the slider */
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: var(--thumb-position, 0%);
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            z-index: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .progress-bar:hover::after {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
         .playback-controls {
             display: flex;
             gap: 15px;
@@ -318,6 +405,15 @@
                     <label for="backing-vocals-volume">Backing Vocals</label>
                     <input type="range" id="backing-vocals-volume" min="0" max="1" step="0.01" value="0.5">
                 </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="time-display current-time">0:00</div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill"></div>
+                    <input type="range" class="progress-slider" min="0" max="100" value="0">
+                </div>
+                <div class="time-display total-time">0:00</div>
             </div>
 
             <div class="playback-controls">

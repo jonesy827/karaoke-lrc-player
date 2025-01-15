@@ -31,6 +31,15 @@ const stopBtn = document.getElementById('stop-btn');
 const instrumentalVolume = document.getElementById('instrumental-volume');
 const leadVocalsVolume = document.getElementById('lead-vocals-volume');
 const backingVocalsVolume = document.getElementById('backing-vocals-volume');
+const progressSlider = document.querySelector('.progress-slider');
+const progressBarFill = document.querySelector('.progress-bar-fill');
+const currentTimeDisplay = document.querySelector('.current-time');
+const totalTimeDisplay = document.querySelector('.total-time');
+
+// Additional state variables
+let duration = 0;
+let progressUpdateInterval;
+let progressAnimationFrame;
 
 // Initialize audio context on user interaction
 function initAudioContext() {
@@ -75,6 +84,13 @@ async function loadSong(songPath) {
             loadAudio(`${songPath}/lead_vocals.wav`),
             loadAudio(`${songPath}/backing_vocals.wav`)
         ]);
+
+        // Set duration based on instrumental track
+        duration = instrumental.duration;
+        totalTimeDisplay.textContent = formatTime(duration);
+        progressSlider.value = 0;
+        progressBarFill.style.width = '0%';
+        currentTimeDisplay.textContent = '0:00';
 
         // Create audio buffer source nodes
         instrumentalNode = audioContext.createBufferSource();
@@ -155,6 +171,83 @@ function playSong() {
     
     isPlaying = true;
     updateLyrics();
+    startProgressUpdate();
+}
+
+// Update progress bar and time display
+function startProgressUpdate() {
+    if (progressAnimationFrame) {
+        cancelAnimationFrame(progressAnimationFrame);
+    }
+    
+    function updateProgress() {
+        if (!isPlaying) return;
+        
+        const currentTime = audioContext.currentTime - startTime;
+        const progress = (currentTime / duration) * 100;
+        
+        // Update slider value and progress bar fill
+        progressSlider.value = progress;
+        progressBarFill.style.width = `${progress}%`;
+        progressBarFill.parentElement.style.setProperty('--thumb-position', `${progress}%`);
+        currentTimeDisplay.textContent = formatTime(currentTime);
+        
+        if (currentTime >= duration) {
+            stopSong();
+            return;
+        }
+        
+        progressAnimationFrame = requestAnimationFrame(updateProgress);
+    }
+    
+    updateProgress();
+}
+
+// Format time in MM:SS
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Handle seeking
+function seekTo(percentage) {
+    if (!instrumental) return;
+    
+    const newTime = (percentage / 100) * duration;
+    
+    if (isPlaying) {
+        // Stop current playback
+        instrumentalNode.stop();
+        leadVocalsNode.stop();
+        backingVocalsNode.stop();
+        
+        // Create and start new nodes at the seek position
+        instrumentalNode = audioContext.createBufferSource();
+        leadVocalsNode = audioContext.createBufferSource();
+        backingVocalsNode = audioContext.createBufferSource();
+        
+        instrumentalNode.buffer = instrumental;
+        leadVocalsNode.buffer = leadVocals;
+        backingVocalsNode.buffer = backingVocals;
+        
+        instrumentalNode.connect(instrumentalGain);
+        leadVocalsNode.connect(leadVocalsGain);
+        backingVocalsNode.connect(backingVocalsGain);
+        
+        startTime = audioContext.currentTime - newTime;
+        
+        instrumentalNode.start(0, newTime);
+        leadVocalsNode.start(0, newTime);
+        backingVocalsNode.start(0, newTime);
+    } else {
+        startTime = audioContext.currentTime - newTime;
+    }
+    
+    // Update displays
+    currentTimeDisplay.textContent = formatTime(newTime);
+    progressBarFill.style.width = `${percentage}%`;
+    progressBarFill.parentElement.style.setProperty('--thumb-position', `${percentage}%`);
 }
 
 // Pause playback
@@ -162,6 +255,8 @@ function pauseSong() {
     if (!isPlaying) return;
     audioContext.suspend();
     cancelAnimationFrame(animationFrame);
+    cancelAnimationFrame(progressAnimationFrame);
+    isPlaying = false;
 }
 
 // Stop playback
@@ -182,7 +277,13 @@ function stopSong() {
         isPlaying = false;
         startTime = 0;
         cancelAnimationFrame(animationFrame);
+        cancelAnimationFrame(progressAnimationFrame);
         lyricsDisplay.reset();
+        
+        // Reset progress displays
+        progressSlider.value = 0;
+        progressBarFill.style.width = '0%';
+        currentTimeDisplay.textContent = '0:00';
         
         // Reload the song
         loadSong(songSelect.value);
@@ -220,6 +321,21 @@ backingVocalsVolume.addEventListener('input', (e) => {
     if (backingVocalsGain) {
         backingVocalsGain.gain.value = parseFloat(e.target.value);
     }
+});
+
+// Add progress slider event listener
+progressSlider.addEventListener('input', (e) => {
+    const percentage = parseFloat(e.target.value);
+    seekTo(percentage);
+});
+
+// Add progress slider hover effect
+progressSlider.addEventListener('mouseover', () => {
+    progressBarFill.parentElement.classList.add('hover');
+});
+
+progressSlider.addEventListener('mouseout', () => {
+    progressBarFill.parentElement.classList.remove('hover');
 });
 
 // Load available songs
