@@ -4,11 +4,11 @@ A web-based karaoke player that supports word-level lyrics highlighting and mult
 
 ## Features
 
-- 🎵 Multi-track audio playback (instrumental, lead vocals, backing vocals)
-- 🎯 Word-level lyrics highlighting synchronized with audio
-- 🎚️ Individual volume controls for each audio track
-- 📱 Responsive modern UI
-- 🎤 Support for enhanced LRC format with word-level timestamps
+- Multi-track audio playback (instrumental, lead vocals, backing vocals)
+- Word-level lyrics highlighting synchronized with audio
+- Individual volume controls for each audio track
+- Screen-based lyrics display with smooth transitions
+- Support for enhanced LRC format with word-level timestamps
 
 ## Getting Started
 
@@ -50,12 +50,21 @@ songs/
 
 ### LRC File Format
 
-The player supports enhanced LRC files with word-level timestamps:
+The player supports enhanced LRC files with word-level timestamps. Each line starts with a line timestamp, followed by individual word timestamps:
 
 ```
 [00:01.00] <00:01.00>Hello <00:01.50>world
 [00:02.50] <00:02.50>This <00:03.00>is <00:03.25>Karaoke!
 ```
+
+## Display System
+
+The player uses a screen-based display system that:
+- Shows lyrics in full-screen pages
+- Automatically splits content into screens based on natural breaks and line count
+- Handles instrumental breaks as dedicated screens with progress indicators
+- Maintains word-level highlighting with accurate timing
+- Smoothly transitions between screens
 
 ## Usage
 
@@ -64,6 +73,7 @@ The player supports enhanced LRC files with word-level timestamps:
 3. Adjust volume levels for each track using the sliders
    - Lead vocals are muted by default
    - Backing vocals slider only appears if the track exists
+4. Use the progress bar to seek within the song
 
 ## Technologies Used
 
