@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karaoke Player</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
             --primary-color: #6c63ff;
@@ -73,9 +74,10 @@
         }
 
         .panel-header {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            justify-content: space-between;
+            gap: 20px;
             padding: 0 20px;
             height: var(--panel-height);
         }
@@ -85,6 +87,63 @@
             font-weight: 600;
             color: var(--primary-color);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .transport-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .transport-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2em;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .transport-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .transport-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .transport-btn.primary:hover {
+            background: var(--primary-color);
+            opacity: 0.9;
+        }
+
+        .header-progress {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 20px;
+        }
+
+        .time-display {
+            color: var(--text-color);
+            font-size: 0.9em;
+            min-width: 45px;
         }
 
         .toggle-panel {
@@ -250,11 +309,6 @@
             padding: 10px 0;
         }
 
-        .time-display {
-            color: var(--text-color);
-            font-size: 1em;
-        }
-
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -359,20 +413,28 @@
         }
 
         @media (max-width: 768px) {
-            .volume-controls {
+            .panel-header {
                 grid-template-columns: 1fr;
+                height: auto;
+                padding: 10px;
+                gap: 10px;
             }
 
-            .playback-controls {
+            .header-controls {
                 flex-direction: column;
-            }
-
-            button {
                 width: 100%;
             }
 
-            #lyrics-container {
-                font-size: min(4vh, 1.6em);
+            .header-progress {
+                margin: 10px 0;
+            }
+
+            .panel-title {
+                text-align: center;
+            }
+
+            .transport-controls {
+                justify-content: center;
             }
         }
     </style>
@@ -383,6 +445,27 @@
     <div class="control-panel">
         <div class="panel-header">
             <div class="panel-title">Karaoke Player</div>
+            <div class="header-controls">
+                <div class="transport-controls">
+                    <button id="play-btn" class="transport-btn primary" title="Play">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button id="pause-btn" class="transport-btn" title="Pause">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button id="stop-btn" class="transport-btn" title="Stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+                <div class="header-progress">
+                    <div class="time-display current-time">0:00</div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                        <input type="range" class="progress-slider" min="0" max="100" value="0">
+                    </div>
+                    <div class="time-display total-time">0:00</div>
+                </div>
+            </div>
             <button class="toggle-panel" onclick="this.parentElement.parentElement.classList.toggle('expanded')"></button>
         </div>
         <div class="panel-content">
@@ -405,21 +488,6 @@
                     <label for="backing-vocals-volume">Backing Vocals</label>
                     <input type="range" id="backing-vocals-volume" min="0" max="1" step="0.01" value="0.5">
                 </div>
-            </div>
-
-            <div class="progress-container">
-                <div class="time-display current-time">0:00</div>
-                <div class="progress-bar">
-                    <div class="progress-bar-fill"></div>
-                    <input type="range" class="progress-slider" min="0" max="100" value="0">
-                </div>
-                <div class="time-display total-time">0:00</div>
-            </div>
-
-            <div class="playback-controls">
-                <button id="play-btn">Play</button>
-                <button id="pause-btn">Pause</button>
-                <button id="stop-btn">Stop</button>
             </div>
         </div>
     </div>
