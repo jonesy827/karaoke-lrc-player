@@ -116,7 +116,7 @@ function updateLyrics() {
     const currentWord = lrcParser.getWordAtTime(currentTime);
     
     if (currentWord) {
-        lyricsDisplay.highlight(currentWord.lineIndex, currentWord.word);
+        lyricsDisplay.highlight(currentWord.lineIndex, currentWord.word, audioContext, startTime);
     }
     
     animationFrame = requestAnimationFrame(updateLyrics);

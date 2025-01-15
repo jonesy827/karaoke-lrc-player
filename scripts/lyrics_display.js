@@ -214,7 +214,7 @@ class LyricsDisplay {
     }
 
     // Highlight the current word and line, managing visible lines
-    highlight(lineIndex, word) {
+    highlight(lineIndex, word, audioContext, startTime) {
         // Remove previous highlights only if changing lines or entering/leaving instrumental
         if (this.currentLineIndex !== -1 && 
             (this.currentLineIndex !== lineIndex || 
