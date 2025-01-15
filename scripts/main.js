@@ -1,5 +1,6 @@
 import LRCParser from './lrc_parser.js';
 import LyricsDisplay from './lyrics_display.js';
+import ScreenManager from './screen_manager.js';
 
 // Audio Context and nodes
 let audioContext;
@@ -114,8 +115,12 @@ async function loadSong(songPath) {
         lrcParser = new LRCParser();
         const parsedLyrics = lrcParser.parse(lrcText);
         
+        // Create screen manager and generate screens
+        const screenManager = new ScreenManager();
+        screenManager.generateScreens(parsedLyrics);
+        
         lyricsDisplay = new LyricsDisplay(lyricsContainer);
-        lyricsDisplay.render(parsedLyrics);
+        lyricsDisplay.render(screenManager);
 
         return true;
     } catch (error) {
@@ -129,11 +134,7 @@ function updateLyrics() {
     if (!isPlaying) return;
     
     const currentTime = audioContext.currentTime - startTime;
-    const currentWord = lrcParser.getWordAtTime(currentTime);
-    
-    if (currentWord) {
-        lyricsDisplay.highlight(currentWord.lineIndex, currentWord.word, audioContext, startTime);
-    }
+    lyricsDisplay.update(currentTime);
     
     animationFrame = requestAnimationFrame(updateLyrics);
 }
