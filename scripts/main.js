@@ -36,6 +36,7 @@ const progressSlider = document.querySelector('.progress-slider');
 const progressBarFill = document.querySelector('.progress-bar-fill');
 const currentTimeDisplay = document.querySelector('.current-time');
 const totalTimeDisplay = document.querySelector('.total-time');
+const debugOffsetInput = document.getElementById('debug-offset');
 
 // Additional state variables
 let duration = 0;
@@ -112,9 +113,13 @@ async function loadSong(songPath) {
         const lrcResponse = await fetch(`${songPath}/lyrics.lrc`);
         const lrcText = await lrcResponse.text();
         
+        // Create new parser but preserve existing offset if there is one
+        const existingOffset = lrcParser ? lrcParser.debugOffset : parseInt(debugOffsetInput.value) || 0;
         lrcParser = new LRCParser();
+        lrcParser.setDebugOffset(existingOffset);
+        debugOffsetInput.value = existingOffset; // Keep input in sync
         const parsedLyrics = lrcParser.parse(lrcText);
-        
+
         // Create screen manager and generate screens
         const screenManager = new ScreenManager();
         screenManager.generateScreens(parsedLyrics);
@@ -367,4 +372,28 @@ async function loadAvailableSongs() {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     loadAvailableSongs();
+});
+
+// Event Listeners
+debugOffsetInput.addEventListener('input', async (e) => {
+    if (lrcParser && songSelect.value) {
+        const newOffset = parseInt(e.target.value) || 0;
+        lrcParser.setDebugOffset(newOffset);
+        
+        // Re-parse lyrics with new offset
+        const lrcResponse = await fetch(`${songSelect.value}/lyrics.lrc`);
+        const lrcText = await lrcResponse.text();
+        const parsedLyrics = lrcParser.parse(lrcText);
+        
+        // Update screen manager and display
+        const screenManager = new ScreenManager();
+        screenManager.generateScreens(parsedLyrics);
+        lyricsDisplay.render(screenManager);
+        
+        if (isPlaying) {
+            // Force an immediate update of the lyrics display
+            const currentTime = audioContext.currentTime - startTime;
+            lyricsDisplay.update(currentTime);
+        }
+    }
 }); 

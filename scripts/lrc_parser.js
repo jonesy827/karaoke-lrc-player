@@ -1,6 +1,12 @@
 class LRCParser {
     constructor() {
         this.lyrics = [];
+        this.debugOffset = 0; // Debug offset in milliseconds
+    }
+
+    // Set debug offset
+    setDebugOffset(offsetMs) {
+        this.debugOffset = offsetMs;
     }
 
     // Convert timestamp string to seconds
@@ -63,6 +69,11 @@ class LRCParser {
         for (const line of lines) {
             const parsedLine = this.parseLine(line.trim());
             if (parsedLine) {
+                // Apply offset to all timestamps
+                parsedLine.lineTimestamp += this.debugOffset / 1000;
+                parsedLine.words.forEach(word => {
+                    word.timestamp += this.debugOffset / 1000;
+                });
                 this.lyrics.push(parsedLine);
             }
         }
@@ -72,9 +83,12 @@ class LRCParser {
 
     // Get the word that should be highlighted at a given time
     getWordAtTime(time) {
+        // No need to adjust time here anymore since timestamps are already adjusted
+        const adjustedTime = time;
+
         // Find the current line
         const currentLineIndex = this.lyrics.findIndex(line => 
-            line.lineTimestamp > time
+            line.lineTimestamp > adjustedTime
         ) - 1;
 
         if (currentLineIndex < 0) return null;
@@ -84,8 +98,8 @@ class LRCParser {
         // Find the current word in the line
         const currentWordIndex = currentLine.words.findIndex((word, index) => {
             const nextWord = currentLine.words[index + 1];
-            return word.timestamp <= time && 
-                   (!nextWord || nextWord.timestamp > time);
+            return word.timestamp <= adjustedTime && 
+                   (!nextWord || nextWord.timestamp > adjustedTime);
         });
 
         if (currentWordIndex === -1) return null;
