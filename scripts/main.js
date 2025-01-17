@@ -1,6 +1,8 @@
 import LRCParser from './lrc_parser.js';
 import LyricsDisplay from './lyrics_display.js';
 import ScreenManager from './screen_manager.js';
+import Visualizer from './visualizer.js';
+import VizControls from './viz_controls.js';
 
 // Audio Context and nodes
 let audioContext;
@@ -37,11 +39,14 @@ const progressBarFill = document.querySelector('.progress-bar-fill');
 const currentTimeDisplay = document.querySelector('.current-time');
 const totalTimeDisplay = document.querySelector('.total-time');
 const debugOffsetInput = document.getElementById('debug-offset');
+const vizStyleSelect = document.getElementById('viz-style');
 
 // Additional state variables
 let duration = 0;
 let progressUpdateInterval;
 let progressAnimationFrame;
+let visualizer = null;
+let vizControls = null;
 
 // Initialize audio context on user interaction
 function initAudioContext() {
@@ -165,10 +170,27 @@ function playSong() {
     leadVocalsNode.buffer = leadVocals;
     backingVocalsNode.buffer = backingVocals;
     
+    // Create merger node for visualization
+    const merger = audioContext.createChannelMerger(3);
+    instrumentalNode.connect(merger);
+    leadVocalsNode.connect(merger);
+    backingVocalsNode.connect(merger);
+    
     // Connect nodes to gain nodes
     instrumentalNode.connect(instrumentalGain);
     leadVocalsNode.connect(leadVocalsGain);
     backingVocalsNode.connect(backingVocalsGain);
+    
+    // Initialize visualizer if not already created
+    if (!visualizer) {
+        const container = document.querySelector('.background-animation');
+        visualizer = new Visualizer(container, audioContext, merger);
+        // Initialize visualization controls
+        vizControls = new VizControls(visualizer);
+    }
+    
+    // Start visualization
+    visualizer.start();
     
     // Start playback
     instrumentalNode.start(0);
@@ -223,7 +245,10 @@ function seekTo(percentage) {
     const newTime = (percentage / 100) * duration;
     
     if (isPlaying) {
-        // Stop current playback
+        // Stop current playback and visualizer
+        if (visualizer) {
+            visualizer.stop();
+        }
         instrumentalNode.stop();
         leadVocalsNode.stop();
         backingVocalsNode.stop();
@@ -237,11 +262,24 @@ function seekTo(percentage) {
         leadVocalsNode.buffer = leadVocals;
         backingVocalsNode.buffer = backingVocals;
         
+        // Create merger node for visualization
+        const merger = audioContext.createChannelMerger(3);
+        instrumentalNode.connect(merger);
+        leadVocalsNode.connect(merger);
+        backingVocalsNode.connect(merger);
+        
+        // Connect nodes to gain nodes
         instrumentalNode.connect(instrumentalGain);
         leadVocalsNode.connect(leadVocalsGain);
         backingVocalsNode.connect(backingVocalsGain);
         
         startTime = audioContext.currentTime - newTime;
+        
+        // Restart visualizer with new merger node
+        if (visualizer) {
+            visualizer.sourceNode = merger;
+            visualizer.start();
+        }
         
         instrumentalNode.start(0, newTime);
         leadVocalsNode.start(0, newTime);
@@ -262,6 +300,9 @@ function pauseSong() {
     audioContext.suspend();
     cancelAnimationFrame(animationFrame);
     cancelAnimationFrame(progressAnimationFrame);
+    if (visualizer) {
+        visualizer.stop();
+    }
     isPlaying = false;
 }
 
@@ -269,31 +310,36 @@ function pauseSong() {
 function stopSong() {
     if (!isPlaying) return;
     
-    audioContext.suspend().then(() => {
-        // Clean up existing nodes
-        instrumentalNode.stop();
-        leadVocalsNode.stop();
-        backingVocalsNode.stop();
-        
-        instrumentalNode.disconnect();
-        leadVocalsNode.disconnect();
-        backingVocalsNode.disconnect();
-        
-        // Reset state
-        isPlaying = false;
-        startTime = 0;
-        cancelAnimationFrame(animationFrame);
-        cancelAnimationFrame(progressAnimationFrame);
-        lyricsDisplay.reset();
-        
-        // Reset progress displays
-        progressSlider.value = 0;
-        progressBarFill.style.width = '0%';
-        currentTimeDisplay.textContent = '0:00';
-        
-        // Reload the song
-        loadSong(songSelect.value);
-    });
+    // Clean up existing nodes
+    instrumentalNode.stop();
+    leadVocalsNode.stop();
+    backingVocalsNode.stop();
+    
+    instrumentalNode.disconnect();
+    leadVocalsNode.disconnect();
+    backingVocalsNode.disconnect();
+    
+    // Stop visualization
+    if (visualizer) {
+        visualizer.stop();
+    }
+    
+    // Reset state
+    isPlaying = false;
+    startTime = 0;
+    cancelAnimationFrame(animationFrame);
+    cancelAnimationFrame(progressAnimationFrame);
+    lyricsDisplay.reset();
+    
+    // Reset progress displays
+    progressSlider.value = 0;
+    progressBarFill.style.width = '0%';
+    currentTimeDisplay.textContent = '0:00';
+    
+    // Resume the audio context to allow new playback
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
 }
 
 // Event Listeners
@@ -344,6 +390,13 @@ progressSlider.addEventListener('mouseout', () => {
     progressBarFill.parentElement.classList.remove('hover');
 });
 
+// Add visualization style change handler
+vizStyleSelect.addEventListener('change', (e) => {
+    if (visualizer) {
+        visualizer.setStyle(e.target.value);
+    }
+});
+
 // Load available songs
 async function loadAvailableSongs() {
     try {
@@ -360,7 +413,13 @@ async function loadAvailableSongs() {
         
         songSelect.addEventListener('change', async () => {
             if (songSelect.value) {
-                await loadSong(songSelect.value);
+                const controlPanel = document.querySelector('.control-panel');
+                controlPanel.classList.add('loading');
+                try {
+                    await loadSong(songSelect.value);
+                } finally {
+                    controlPanel.classList.remove('loading');
+                }
             }
         });
     } catch (error) {

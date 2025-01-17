@@ -12,6 +12,7 @@
     <div class="background-animation"></div>
     
     <div class="control-panel">
+        <div class="loading-spinner"></div>
         <div class="panel-header">
             <div class="panel-title">Karaoke Player</div>
             <div class="header-controls">
@@ -56,6 +57,25 @@
                 <div class="volume-control">
                     <label for="backing-vocals-volume">Backing Vocals</label>
                     <input type="range" id="backing-vocals-volume" min="0" max="1" step="0.01" value="0.5">
+                </div>
+            </div>
+            
+            <div class="visualization-controls">
+                <label for="viz-style">Visualization Style</label>
+                <div class="viz-style-container">
+                    <select id="viz-style">
+                        <option value="frequency-waves">Frequency Waves</option>
+                        <option value="particle-field">Particle Field</option>
+                        <option value="color-pulse">Color Pulse</option>
+                        <option value="spectrum-bars">Spectrum Bars</option>
+                        <option value="aurora">Aurora</option>
+                        <option value="nebula">Nebula</option>
+                        <option value="circuit-flow">Circuit Flow</option>
+                    </select>
+                    <div class="viz-preview" id="viz-preview"></div>
+                </div>
+                <div class="viz-description" id="viz-description">
+                    Select a visualization style to see it in action
                 </div>
             </div>
             
