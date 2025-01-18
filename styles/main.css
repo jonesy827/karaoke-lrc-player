@@ -38,6 +38,16 @@ body {
     height: 100%;
 }
 
+/* DNA Helix specific styles */
+.background-animation.dna-helix canvas {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8));
+}
+
+/* Crystal Cave specific styles */
+.background-animation.crystal-cave canvas {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(10, 20, 40, 0.85));
+}
+
 .background-animation::before {
     content: '';
     position: absolute;

@@ -63,6 +63,35 @@ class Visualizer {
         this.rotationSpeed = 0;
         this.lastBassIntensity = 0;
         this.rotationCenter = { x: 0, y: 0 };
+
+        // Initialize DNA Helix components
+        this.dnaStrands = Array(20).fill().map(() => ({
+            offset: Math.random() * Math.PI * 2,
+            basePairs: Array(15).fill().map(() => ({
+                energy: Math.random(),
+                hue: Math.random() * 360,
+                connection: Math.random()
+            }))
+        }));
+        this.dnaRotation = 0;
+        this.dnaUnwind = 0;
+
+        // Initialize Crystal Cave formations
+        this.crystals = Array(12).fill().map(() => ({
+            x: Math.random() * this.width,
+            y: Math.random() * this.height,
+            size: Math.random() * 100 + 50,
+            angle: Math.random() * Math.PI * 2,
+            growth: 0,
+            energy: Math.random(),
+            hue: Math.random() * 60 + 180, // Blue/cyan range
+            branches: Array(5).fill().map(() => ({
+                angle: Math.random() * Math.PI * 2,
+                length: Math.random() * 0.5 + 0.5,
+                pulse: 0
+            }))
+        }));
+        this.lastCrystalPulse = performance.now();
     }
 
     initParticles() {
@@ -134,6 +163,12 @@ class Visualizer {
                 break;
             case 'circuit-flow':
                 this.drawCircuitFlow();
+                break;
+            case 'dna-helix':
+                this.drawDNAHelix();
+                break;
+            case 'crystal-cave':
+                this.drawCrystalCave();
                 break;
         }
     }
@@ -567,6 +602,232 @@ class Visualizer {
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(0, 0, this.width, this.height);
         }
+    }
+
+    drawDNAHelix() {
+        const now = performance.now() / 1000;
+        this.analyzer.getByteFrequencyData(this.dataArray);
+        this.bassAnalyzer.getByteFrequencyData(this.bassDataArray);
+
+        // Calculate audio intensities
+        const bassIntensity = this.bassDataArray.reduce((a, b) => a + b) / this.bassBufferLength / 255;
+        const avgFrequency = this.dataArray.reduce((a, b) => a + b) / this.bufferLength / 255;
+
+        // Clear with fade effect
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Update DNA rotation and unwinding based on audio
+        this.dnaRotation += (bassIntensity * 0.1 + 0.02);
+        this.dnaUnwind = Math.sin(now * 0.5) * avgFrequency * 0.5;
+
+        // Draw each DNA strand
+        this.dnaStrands.forEach((strand, index) => {
+            const centerX = this.width / 2;
+            const startY = -200;
+            const height = this.height + 400;
+            const width = 200 * (1 + this.dnaUnwind);
+
+            // Draw the main helix strands
+            ['rgba(0, 150, 255, 0.6)', 'rgba(255, 100, 255, 0.6)'].forEach((color, strandIndex) => {
+                this.ctx.beginPath();
+                for (let y = 0; y <= height; y += 5) {
+                    const progress = y / height;
+                    const phase = progress * Math.PI * 20 + this.dnaRotation + strand.offset;
+                    const x = centerX + Math.sin(phase + strandIndex * Math.PI) * width;
+                    const actualY = startY + y;
+
+                    if (y === 0) {
+                        this.ctx.moveTo(x, actualY);
+                    } else {
+                        this.ctx.lineTo(x, actualY);
+                    }
+                }
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 4 * (1 + bassIntensity);
+                this.ctx.stroke();
+            });
+
+            // Draw base pairs and energy connections
+            strand.basePairs.forEach((base, baseIndex) => {
+                const progress = baseIndex / strand.basePairs.length;
+                const y = startY + progress * height;
+                const phase = progress * Math.PI * 20 + this.dnaRotation + strand.offset;
+
+                // Update base pair energy based on frequency data
+                const freqIndex = Math.floor(progress * this.bufferLength);
+                base.energy = Math.max(base.energy, this.dataArray[freqIndex] / 255);
+                base.energy *= 0.95; // Decay
+
+                // Draw base pair connections
+                const x1 = centerX + Math.sin(phase) * width;
+                const x2 = centerX + Math.sin(phase + Math.PI) * width;
+
+                // Energy connection
+                const gradient = this.ctx.createLinearGradient(x1, y, x2, y);
+                gradient.addColorStop(0, `hsla(${base.hue}, 80%, 60%, ${base.energy * 0.8})`);
+                gradient.addColorStop(0.5, `hsla(${(base.hue + 40) % 360}, 80%, 60%, ${base.energy})`);
+                gradient.addColorStop(1, `hsla(${base.hue}, 80%, 60%, ${base.energy * 0.8})`);
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(x1, y);
+                this.ctx.lineTo(x2, y);
+                this.ctx.strokeStyle = gradient;
+                this.ctx.lineWidth = 3 * base.energy;
+                this.ctx.stroke();
+
+                // Draw glowing nodes at connection points
+                [x1, x2].forEach(x => {
+                    const glow = this.ctx.createRadialGradient(x, y, 0, x, y, 15 * base.energy);
+                    glow.addColorStop(0, `hsla(${base.hue}, 80%, 60%, ${base.energy})`);
+                    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 15 * base.energy, 0, Math.PI * 2);
+                    this.ctx.fillStyle = glow;
+                    this.ctx.fill();
+                });
+            });
+        });
+    }
+
+    drawCrystalCave() {
+        const now = performance.now();
+        const deltaTime = (now - this.lastCrystalPulse) / 1000;
+        this.lastCrystalPulse = now;
+
+        this.analyzer.getByteFrequencyData(this.dataArray);
+        this.bassAnalyzer.getByteFrequencyData(this.bassDataArray);
+
+        // Calculate audio intensities
+        const bassIntensity = this.bassDataArray.reduce((a, b) => a + b) / this.bassBufferLength / 255;
+        const avgFrequency = this.dataArray.reduce((a, b) => a + b) / this.bufferLength / 255;
+
+        // Clear with fade effect
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Update and draw crystals
+        this.crystals.forEach((crystal, index) => {
+            // Update crystal growth and energy based on audio
+            crystal.growth = Math.min(1, crystal.growth + deltaTime * (0.1 + bassIntensity * 0.5));
+            crystal.energy = Math.max(crystal.energy, avgFrequency);
+            crystal.energy *= 0.95; // Decay
+
+            // Calculate crystal points
+            const points = [];
+            const size = crystal.size * crystal.growth;
+            
+            // Create crystal shape
+            crystal.branches.forEach(branch => {
+                const angle = crystal.angle + branch.angle;
+                const length = size * branch.length;
+                points.push({
+                    x: crystal.x + Math.cos(angle) * length,
+                    y: crystal.y + Math.sin(angle) * length
+                });
+
+                // Update branch pulse
+                branch.pulse = Math.max(0, branch.pulse - deltaTime);
+                if (Math.random() < avgFrequency * 0.1) {
+                    branch.pulse = 1;
+                }
+            });
+
+            // Draw crystal core
+            const gradient = this.ctx.createRadialGradient(
+                crystal.x, crystal.y, 0,
+                crystal.x, crystal.y, size
+            );
+            
+            const energy = crystal.energy * (1 + Math.sin(now / 1000 * 2) * 0.2);
+            gradient.addColorStop(0, `hsla(${crystal.hue}, 80%, 60%, ${energy * 0.8})`);
+            gradient.addColorStop(0.5, `hsla(${crystal.hue + 30}, 70%, 50%, ${energy * 0.4})`);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(points[0].x, points[0].y);
+            points.forEach((point, i) => {
+                const nextPoint = points[(i + 1) % points.length];
+                this.ctx.lineTo(nextPoint.x, nextPoint.y);
+            });
+            this.ctx.closePath();
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
+
+            // Draw energy lines
+            crystal.branches.forEach((branch, branchIndex) => {
+                if (branch.pulse > 0) {
+                    const angle = crystal.angle + branch.angle;
+                    const length = size * branch.length;
+                    const endX = crystal.x + Math.cos(angle) * length * 1.2;
+                    const endY = crystal.y + Math.sin(angle) * length * 1.2;
+
+                    const lineGradient = this.ctx.createLinearGradient(
+                        crystal.x, crystal.y, endX, endY
+                    );
+                    lineGradient.addColorStop(0, `hsla(${crystal.hue}, 80%, 60%, ${branch.pulse})`);
+                    lineGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(crystal.x, crystal.y);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.strokeStyle = lineGradient;
+                    this.ctx.lineWidth = 3 * branch.pulse;
+                    this.ctx.stroke();
+                }
+            });
+
+            // Draw connecting energy between nearby crystals
+            this.crystals.forEach((other, otherIndex) => {
+                if (index === otherIndex) return;
+                
+                const dx = crystal.x - other.x;
+                const dy = crystal.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 300) {
+                    const strength = (1 - distance / 300) * crystal.energy * other.energy;
+                    const gradient = this.ctx.createLinearGradient(
+                        crystal.x, crystal.y, other.x, other.y
+                    );
+                    
+                    gradient.addColorStop(0, `hsla(${crystal.hue}, 80%, 60%, ${strength * 0.5})`);
+                    gradient.addColorStop(1, `hsla(${other.hue}, 80%, 60%, ${strength * 0.5})`);
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(crystal.x, crystal.y);
+                    this.ctx.lineTo(other.x, other.y);
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = 2 * strength;
+                    this.ctx.stroke();
+                }
+            });
+
+            // Fracture effect on bass hits
+            if (bassIntensity > 0.8 && Math.random() < 0.3) {
+                const fractures = 3;
+                for (let i = 0; i < fractures; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const length = size * (0.3 + Math.random() * 0.7);
+                    const endX = crystal.x + Math.cos(angle) * length;
+                    const endY = crystal.y + Math.sin(angle) * length;
+
+                    const gradient = this.ctx.createLinearGradient(
+                        crystal.x, crystal.y, endX, endY
+                    );
+                    gradient.addColorStop(0, `hsla(${crystal.hue}, 90%, 70%, 0.8)`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(crystal.x, crystal.y);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+            }
+        });
     }
 }
 

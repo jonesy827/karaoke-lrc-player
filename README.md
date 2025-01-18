@@ -36,6 +36,42 @@ python serve.py
 http://localhost:8000
 ```
 
+## Project Structure
+
+The project is organized with the following structure:
+
+```
+karaoke-lrc-player/
+├── index.html          # Main application HTML file
+├── serve.py           # Python-based development server
+├── scripts/           # JavaScript modules
+│   ├── main.js           # Core application logic and initialization
+│   ├── lrc_parser.js     # LRC file parsing and timestamp handling
+│   ├── lyrics_display.js # Lyrics rendering and highlighting
+│   ├── screen_manager.js # Screen transition and management
+│   ├── visualizer.js     # Audio visualization effects
+│   └── viz_controls.js   # Visualization control interface
+├── styles/           # CSS stylesheets
+│   └── main.css         # All application styles
+└── songs/            # Directory for karaoke song files (not included)
+```
+
+### Key Components
+
+- **index.html**: The main entry point of the application, containing the basic structure and loading all required scripts and styles.
+- **serve.py**: A simple Python server for local development and testing.
+
+#### JavaScript Modules (scripts/)
+- **main.js**: Initializes the application, handles audio processing, and coordinates between different components.
+- **lrc_parser.js**: Parses enhanced LRC files with word-level timestamps.
+- **lyrics_display.js**: Manages the rendering and highlighting of lyrics.
+- **screen_manager.js**: Handles screen transitions and content organization.
+- **visualizer.js**: Implements various audio visualization styles and effects.
+- **viz_controls.js**: Provides the interface for controlling visualization settings.
+
+#### Styles (styles/)
+- **main.css**: Contains all styling for the application, including layout, animations, and visualization effects.
+
 ## Song Format
 
 Place your songs in the `songs/` directory with the following structure:
@@ -88,6 +124,8 @@ The player includes several sound-reactive background visualizations that respon
 5. **Aurora**: Ethereal aurora-like waves that dance to the music
 6. **Nebula**: Cosmic nebula clouds that pulse and swirl with the music, creating a space-like atmosphere
 7. **Circuit Flow**: Cyberpunk-inspired network of nodes with data pulses flowing to the beat
+8. **DNA Helix**: Double helix structure that unwinds and rotates based on frequency intensity, with base pairs that light up and connect through energy strands reacting to different audio frequencies
+9. **Crystal Cave**: Procedurally generated crystalline formations that grow, shimmer, and fracture in response to the music's dynamics, with echoing light patterns that cascade through the crystal network
 
 Features of the visualization system:
 - Real-time audio analysis using Web Audio API's analyzer nodes
