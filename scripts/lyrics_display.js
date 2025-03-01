@@ -78,15 +78,12 @@ class LyricsDisplay {
 
                 .lyrics-line.active {
                     opacity: 1;
-                    transform: scale(1.05);
                     color: var(--text-color);
                 }
 
                 .lyrics-word {
                     display: inline-block;
                     padding: 0.1em 0.2em;
-                    border-radius: 4px;
-                    transition: transform 0.2s ease;
                     position: relative;
                     color: var(--text-color);
                 }
@@ -100,15 +97,20 @@ class LyricsDisplay {
                     color: var(--highlight-color);
                     clip-path: inset(0 100% 0 0);
                     pointer-events: none;
+                    white-space: nowrap;
                 }
 
-                .lyrics-word.active {
-                    transform: scale(1.1);
+                .lyrics-word.past::before {
+                    clip-path: inset(0 0 0 0);
                 }
 
                 .lyrics-word.active::before {
-                    clip-path: inset(0 0 0 0);
-                    transition: clip-path var(--word-duration, 0.5s) linear;
+                    animation: word-highlight var(--word-duration, 0.5s) linear forwards;
+                }
+
+                @keyframes word-highlight {
+                    from { clip-path: inset(0 100% 0 0); }
+                    to { clip-path: inset(0 0 0 0); }
                 }
 
                 .instrumental-break {
@@ -190,6 +192,7 @@ class LyricsDisplay {
                     wordSpan.className = 'lyrics-word';
                     wordSpan.dataset.lineIndex = lineIndex;
                     wordSpan.dataset.wordIndex = wordIndex;
+                    wordSpan.dataset.timestamp = word.timestamp; // Add timestamp
                     return wordSpan;
                 });
 
@@ -275,6 +278,13 @@ class LyricsDisplay {
             this.currentWordIndex = currentWord.index;
         }
 
+        // Update word highlighting and past words
+        const words = screenElement.querySelectorAll('.lyrics-word');
+        words.forEach(word => {
+            const wordTimestamp = parseFloat(word.dataset.timestamp);
+            word.classList.toggle('past', wordTimestamp <= time);
+        });
+
         // Update instrumental progress if needed
         if (screen.isInstrumental) {
             const progressBar = screenElement.querySelector('.instrumental-progress');
@@ -296,4 +306,4 @@ class LyricsDisplay {
     }
 }
 
-export default LyricsDisplay; 
+export default LyricsDisplay;
